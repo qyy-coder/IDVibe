@@ -157,7 +157,7 @@ function toggleOption(el,key){
 fetch(API+'/api/examples').then(r=>r.json()).then(d=>{
   d.examples.forEach(function(ex){
     var el=document.createElement('img');el.src=ex.thumbnail;el.title=ex.name;
-    el.onclick=function(){imgData=ex.thumbnail;setPreview(ex.thumbnail);document.getElementById('genBtn').disabled=false};
+    el.onclick=function(){file=null;imgData=ex.thumbnail;setPreview(ex.thumbnail);document.getElementById('genBtn').disabled=false};
     document.getElementById('examples').appendChild(el);
   });
 });
