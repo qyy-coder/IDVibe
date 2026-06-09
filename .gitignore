@@ -26,3 +26,5 @@ desktop.ini
 # Test photos (personal)
 tests/test_photos/
 test_photos/
+*.docx
+*.pptx
