@@ -1,0 +1,9 @@
+opencv-python>=4.8
+onnxruntime>=1.15
+numpy<=1.26.4
+mtcnn-runtime
+Pillow>=10.0
+fastapi>=0.104
+uvicorn>=0.24
+python-multipart
+requests

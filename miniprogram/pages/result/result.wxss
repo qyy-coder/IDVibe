@@ -1,0 +1,186 @@
+/* 结果页样式 */
+
+.result-preview {
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 20rpx;
+}
+
+.result-image {
+  width: 100%;
+  display: block;
+}
+
+.layout-image {
+  width: 100%;
+  display: block;
+}
+
+/* 结果信息 */
+.result-info {
+  background: #f0f7f0;
+  border-radius: var(--radius);
+  padding: 20rpx;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12rpx 0;
+}
+
+.info-row:not(:last-child) {
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.info-label {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+}
+
+.info-value {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* 操作区 */
+.action-area {
+  padding: 10rpx 0 40rpx;
+}
+
+/* 使用提示 */
+.usage-tips {
+  background: #e8f0fe;
+}
+
+.tip-item {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  line-height: 2;
+  padding-left: 8rpx;
+}
+
+/* 合规检测 */
+.score-text {
+  font-size: 28rpx;
+  color: var(--primary);
+  font-weight: 600;
+  margin-left: 12rpx;
+}
+
+.compliance-summary {
+  font-size: 26rpx;
+  padding: 10rpx 0;
+  margin-bottom: 10rpx;
+}
+
+.c-pass { color: var(--success); font-weight: 600; }
+.c-fail { color: var(--error); font-weight: 600; }
+
+.critical-failures {
+  background: #fce8e6;
+  border-radius: var(--radius);
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.critical-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--error);
+  margin-bottom: 10rpx;
+}
+
+.critical-item {
+  padding: 8rpx 0;
+  border-bottom: 1rpx solid rgba(234, 67, 53, 0.1);
+}
+
+.cf-rule {
+  font-size: 24rpx;
+  color: var(--error);
+  font-weight: 500;
+}
+
+.cf-hint {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  display: block;
+  padding-left: 20rpx;
+  margin-top: 4rpx;
+}
+
+.compliance-detail-toggle {
+  font-size: 26rpx;
+  color: var(--primary);
+  padding: 10rpx 0;
+  text-align: center;
+}
+
+.compliance-detail {
+  margin-top: 12rpx;
+}
+
+.rule-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  padding: 10rpx 8rpx;
+  border-bottom: 1rpx solid var(--border);
+  font-size: 22rpx;
+  align-items: center;
+}
+
+.rule-row.pass { opacity: 0.7; }
+
+.rule-id {
+  font-weight: 600;
+  width: 60rpx;
+  color: var(--text-primary);
+}
+
+.rule-name {
+  flex: 1;
+  color: var(--text-secondary);
+}
+
+.rule-verdict {
+  width: 80rpx;
+  text-align: center;
+  font-weight: 600;
+  font-size: 20rpx;
+  padding: 2rpx 8rpx;
+  border-radius: 8rpx;
+}
+
+.rule-verdict.pass {
+  background: #e6f4ea;
+  color: var(--success);
+}
+
+.rule-verdict.warn {
+  background: #fef7e0;
+  color: #e37400;
+}
+
+.rule-verdict.fail {
+  background: #fce8e6;
+  color: var(--error);
+}
+
+.rule-detail {
+  width: 100%;
+  font-size: 20rpx;
+  color: var(--text-hint);
+  padding-left: 68rpx;
+}
+
+.version-info {
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--text-hint);
+  padding: 20rpx 0;
+}

@@ -1,0 +1,116 @@
+<!--
+  AI一照成证 — 结果页
+  功能: 预览证件照、保存到相册、重新生成
+-->
+<view class="container">
+  <!-- 结果预览 -->
+  <view class="card">
+    <view class="card-title">✅ 证件照生成完成</view>
+
+    <view class="result-preview">
+      <image
+        class="result-image"
+        src="{{resultImage}}"
+        mode="widthFix"
+        show-menu-by-longpress
+      />
+    </view>
+
+    <view class="result-info">
+      <view class="info-row">
+        <text class="info-label">规格</text>
+        <text class="info-value">{{specLabel}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">背景</text>
+        <text class="info-value">{{colorLabel}}</text>
+      </view>
+      <view class="info-row" wx:if="{{processingTime}}">
+        <text class="info-label">耗时</text>
+        <text class="info-value">{{processingTime}} 秒</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 合规检测报告（P1） -->
+  <view class="card" wx:if="{{compliance}}">
+    <view class="card-title">
+      {{compliance.is_compliant ? '✅' : '⚠️'}} 合规检测
+      <text class="score-text">{{compliance.overall_score}}分</text>
+    </view>
+
+    <view class="compliance-summary">
+      <text class="c-pass">通过 {{compliance.passed_count}}</text>
+      <text class="c-fail" wx:if="{{compliance.failed_count > 0}}"> | 未通过 {{compliance.failed_count}}</text>
+    </view>
+
+    <view wx:if="{{compliance.critical_failures.length > 0}}" class="critical-failures">
+      <view class="critical-title">关键问题（将导致照片被拒）：</view>
+      <view wx:for="{{compliance.critical_failures}}" wx:key="rule_id" class="critical-item">
+        <text class="cf-rule">{{item.rule_id}} {{item.name}}</text>
+        <text class="cf-hint">→ {{item.hint}}</text>
+      </view>
+    </view>
+
+    <view class="compliance-detail-toggle" bindtap="toggleComplianceDetail">
+      {{showComplianceDetail ? '收起' : '展开'}}详细检测结果 >
+    </view>
+
+    <view wx:if="{{showComplianceDetail}}" class="compliance-detail">
+      <view wx:for="{{compliance.rules}}" wx:key="rule_id" class="rule-row {{item.verdict}}">
+        <text class="rule-id">{{item.rule_id}}</text>
+        <text class="rule-name">{{item.name}}</text>
+        <text class="rule-verdict {{item.verdict}}">
+          {{item.verdict === 'pass' ? 'PASS' : (item.verdict === 'warn' ? 'WARN' : 'FAIL')}}
+        </text>
+        <text class="rule-detail">{{item.detail}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 排版预览（如果有） -->
+  <view class="card" wx:if="{{layoutImage}}">
+    <view class="card-title">🖼️ 冲印排版</view>
+    <view class="result-preview">
+      <image
+        class="layout-image"
+        src="{{layoutImage}}"
+        mode="widthFix"
+        show-menu-by-longpress
+      />
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-area safe-bottom">
+    <view class="btn-group">
+      <button class="btn btn-primary" bindtap="savePhoto">
+        💾 保存到相册
+      </button>
+    </view>
+    <view class="btn-group" style="margin-top: 20rpx;">
+      <button class="btn btn-outline" bindtap="saveLayout" wx:if="{{layoutImage}}">
+        💾 保存排版照
+      </button>
+    </view>
+    <view class="btn-group" style="margin-top: 20rpx;">
+      <button class="btn btn-secondary" bindtap="goBack">
+        📷 继续生成
+      </button>
+    </view>
+  </view>
+
+  <!-- 使用提示 -->
+  <view class="card usage-tips">
+    <view class="card-title">📋 使用说明</view>
+    <view class="tip-item">1. 长按图片可保存到相册</view>
+    <view class="tip-item">2. 点击"保存到相册"自动保存原图</view>
+    <view class="tip-item">3. 冲印排版可用 U盘/手机 带去冲印店</view>
+    <view class="tip-item">4. 如需修改规格/背景，点击"继续生成"</view>
+  </view>
+
+  <!-- 版本信息 -->
+  <view class="version-info">
+    AI一照成证 v0.1.0 | 隐私保护 · 全本地处理
+  </view>
+</view>
