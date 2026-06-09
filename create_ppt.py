@@ -131,9 +131,14 @@ add_body(sl, [
     ("额外时间开销", "    343ms   ->  381ms   ->  仅增加 10%"),
     ("置信度评分", "      --    ->  100/100  ->  全部 highest"),
     ("", ""),
-    ("结论", "以 10% 的额外时间换取 12.5% 的边缘锐度提升"),
-    ("", "引导滤波恰好弥补了无监督抠图\"过度平滑\"的固有缺陷"),
+    ("结论", "以 10% 额外时间换取 12.5% 边缘锐度提升"),
 ], y=1.5, size=20)
+
+# 插入对比图
+import os as _os
+img_path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'outputs', 'compare_test0.jpg')
+if _os.path.exists(img_path):
+    sl.shapes.add_picture(img_path, Inches(0.8), Inches(5.0), Inches(11.5), Inches(2.2))
 
 # ===== Slide 6: Innovation (原 Slide 5) =====
 sl = prs.slides.add_slide(prs.slide_layouts[6])

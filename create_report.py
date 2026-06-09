@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """生成终结性项目报告 Word 文档"""
 
+import os
 from docx import Document
 from docx.shared import Inches, Pt, Cm, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -168,6 +169,13 @@ for i, (metric, before, after) in enumerate([
         table_exp.cell(i, j).text = v
 
 para('结论：Guided Filter 以仅 10% 的额外时间开销换取了 12.5% 的边缘过渡收窄，所有测试图均达到最高置信度等级。引导滤波的局部线性模型恰好弥补了无监督抠图方法"过度平滑"的固有缺陷，对发丝、衣物边缘等细节区域的改善尤为明显。')
+
+para('')
+para('下图展示了 test0 的对比效果（上排：局部细节，下排：全局Alpha + 差异热力图）：')
+img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'outputs', 'compare_test0.jpg')
+if os.path.exists(img_path):
+    doc.add_picture(img_path, width=Inches(5.5))
+    doc.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
 # ---- 5. Vibe Coding 过程证据 ----
 h1('5. Vibe Coding 过程证据')
