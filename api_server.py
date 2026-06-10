@@ -2,11 +2,9 @@
 # -*- coding: utf-8 -*-
 """AI一照成证 — REST API 服务器"""
 
-import os, sys, time, io, base64
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, PROJECT_ROOT)
-sys.path.insert(0, r"C:\Users\24817\HivisionIDPhotos")
-
+import os
+import sys
+import time
 import numpy as np
 import cv2
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
@@ -14,16 +12,22 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from hivision import IDCreator
-from hivision.creator.choose_handler import choose_handler
-from hivision.utils import add_background
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, PROJECT_ROOT)
+
+from idphoto_system.config import HIVISION_PATH, DEMO_IMAGES_PATH, DEFAULT_PORT, DEFAULT_HOST
+from idphoto_system.processing_service import PhotoProcessingService, ProcessRequest
 from idphoto_system.utils.image_utils import SPECS, COLORS, resolve_spec, resolve_color, array_to_base64
-from idphoto_system.compliance.smart_engine import SmartComplianceEngine
+
+# 确保 HivisionIDPhotos 在路径中
+if HIVISION_PATH not in sys.path:
+    sys.path.insert(0, HIVISION_PATH)
 
 app = FastAPI(title="AI一照成证", version="0.3.0", docs_url="/docs")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
                    allow_methods=["*"], allow_headers=["*"])
 
+# ── 静态前端 ──
 _web_dir = os.path.join(PROJECT_ROOT, "web_frontend")
 if os.path.exists(_web_dir):
     @app.get("/app", response_class=HTMLResponse)
@@ -31,37 +35,51 @@ if os.path.exists(_web_dir):
         with open(os.path.join(_web_dir, "index.html"), "r", encoding="utf-8") as f:
             return f.read()
 
-_creator = None
-def get_creator():
-    global _creator
-    if _creator is None:
-        _creator = IDCreator()
-        choose_handler(_creator, "hivision_modnet", "mtcnn")
-    return _creator
+# ── 核心服务 (单例) ──
+_service = None
+
+
+def get_service() -> PhotoProcessingService:
+    global _service
+    if _service is None:
+        _service = PhotoProcessingService(hivision_path=HIVISION_PATH)
+    return _service
+
+
+# ── API 端点 ──
 
 @app.get("/")
 async def root():
     return {"name": "AI一照成证", "version": "0.3.0", "frontend": "/app"}
 
+
 @app.get("/api/health")
 async def health():
     return {"status": "healthy"}
 
+
 @app.get("/api/specs")
 async def get_specs():
-    return {"specs": [{"id": s.name, "label": f"{s.name}（{s.usage}）" if s.usage else s.label,
-            "width": s.width, "height": s.height} for s in SPECS.values()]}
+    return {"specs": [
+        {"id": s.name, "label": f"{s.name}（{s.usage}）" if s.usage else s.label,
+         "width": s.width, "height": s.height}
+        for s in SPECS.values()
+    ]}
+
 
 @app.get("/api/colors")
 async def get_colors():
-    return {"colors": [{"name": n, "hex": f"#{c[0]:02x}{c[1]:02x}{c[2]:02x}"}
-            for n, c in COLORS.items() if n in ("white","blue","red")]}
+    return {"colors": [
+        {"name": n, "hex": f"#{c[0]:02x}{c[1]:02x}{c[2]:02x}"}
+        for n, c in COLORS.items() if n in ("white", "blue", "red")
+    ]}
+
 
 @app.get("/api/examples")
 async def get_examples():
     """返回可用的示例图片列表"""
     examples = []
-    demo_dir = r"C:\Users\24817\HivisionIDPhotos\demo\images"
+    demo_dir = DEMO_IMAGES_PATH
     if os.path.exists(demo_dir):
         for f in sorted(os.listdir(demo_dir)):
             if f.lower().endswith(('.jpg', '.jpeg', '.png')):
@@ -73,46 +91,6 @@ async def get_examples():
                     examples.append({"name": f, "width": w, "height": h, "thumbnail": b64})
     return {"examples": examples}
 
-def process_single(img, spec_name, color_name, bg_mode="pure_color", beauty_strength=0, brightness_strength=0):
-    """纯证件照生成"""
-    spec = resolve_spec(spec_name)
-    rgb = resolve_color(color_name)
-    bgr = (rgb[2], rgb[1], rgb[0])
-
-    c = get_creator()
-    result = c(img, size=spec.size, change_bg_only=False,
-               head_measure_ratio=0.38, head_height_ratio=0.50, head_top_range=(0.10, 0.08),
-               whitening_strength=int(beauty_strength),
-               brightness_strength=int(brightness_strength),
-               contrast_strength=int(beauty_strength)//3 if beauty_strength else 0)
-    matting = result.matting
-    alpha = matting[:, :, 3].astype(np.float32) / 255.0
-
-    rgba = np.dstack([matting[:,:,:3], (alpha*255).astype(np.uint8)])
-    composited = add_background(rgba, bgr=bgr, mode=bg_mode).astype(np.uint8)
-
-    composited_bgra = cv2.cvtColor(composited, cv2.COLOR_BGR2BGRA)
-    c2 = IDCreator()
-    choose_handler(c2, "hivision_modnet", "mtcnn")
-    result2 = c2(composited_bgra, size=spec.size, crop_only=True,
-                 head_measure_ratio=0.38, head_height_ratio=0.50, head_top_range=(0.10, 0.08))
-
-    # 智能检测
-    checks = None
-    try:
-        face_info = result.face or {}
-        fc = {"bbox": None, "roll_angle": 0}
-        rect2 = face_info.get("rectangle")
-        if rect2 and len(rect2) == 4:
-            cx, cy, fw, fh = rect2
-            fc["bbox"] = (int(cx-fw/2), int(cy-fh/2), int(cx+fw/2), int(cy+fh/2))
-        fc["roll_angle"] = face_info.get("roll_angle", 0)
-        engine = SmartComplianceEngine()
-        checks = engine.check(img, fc, alpha).to_dict()
-    except Exception:
-        pass
-
-    return cv2.cvtColor(result2.standard, cv2.COLOR_BGRA2BGR), checks
 
 @app.post("/api/process")
 async def process_photo(
@@ -123,6 +101,8 @@ async def process_photo(
     beauty: str = Form("0"),
     brightness: str = Form("0"),
 ):
+    """生成证件照 — 统一使用 PhotoProcessingService"""
+    # 读取上传图片
     try:
         contents = await image.read()
         nparr = np.frombuffer(contents, np.uint8)
@@ -131,33 +111,51 @@ async def process_photo(
             raise HTTPException(400, "无法解析图片")
         if img.shape[2] == 4:
             img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(400, f"读取失败: {e}")
 
+    # 构建请求
     t0 = time.time()
+    req = ProcessRequest(
+        image=img,
+        spec=spec,
+        color=color,
+        bg_mode=bg_mode,
+        beauty_strength=float(beauty),
+        brightness_strength=float(brightness),
+        enable_edge_refine=False,       # API 模式下跳过快边缘优化以提升速度
+        enable_compliance=True,
+        compliance_mode="smart",         # 使用智能检测（8项轻量）
+    )
+
     try:
-        result, checks = process_single(img, spec, color, bg_mode=bg_mode,
-                               beauty_strength=float(beauty), brightness_strength=float(brightness))
+        result = get_service().process(req)
     except Exception as e:
         import traceback
         raise HTTPException(500, f"处理失败: {e}")
 
     return {
         "status": "ok",
-        "image": array_to_base64(result),
-        "spec": {"name": resolve_spec(spec).name, "width": result.shape[1], "height": result.shape[0]},
+        "image": array_to_base64(result.standard),
+        "spec": {"name": result.spec_name, "width": result.spec_width, "height": result.spec_height},
         "processing_time": round(time.time() - t0, 3),
-        "checks": checks,
+        "checks": result.checks,
     }
+
 
 if __name__ == "__main__":
     import argparse
     p = argparse.ArgumentParser()
-    p.add_argument("--port", type=int, default=8000)
-    p.add_argument("--host", default="0.0.0.0")
+    p.add_argument("--port", type=int, default=DEFAULT_PORT)
+    p.add_argument("--host", default=DEFAULT_HOST)
     args = p.parse_args()
     print(f"""
-    AI一照成证 API v0.3
-    前端: http://127.0.0.1:{args.port}/app
+    ╔════════════════════════════════╗
+    ║   AI一照成证 API v0.3         ║
+    ║   前端: http://127.0.0.1:{args.port}/app
+    ║   API文档: http://127.0.0.1:{args.port}/docs
+    ╚════════════════════════════════╝
     """)
     uvicorn.run(app, host=args.host, port=args.port)

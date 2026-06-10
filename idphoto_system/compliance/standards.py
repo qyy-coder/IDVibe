@@ -197,6 +197,31 @@ STANDARDS: Dict[str, StandardProfile] = {
         min_resolution_px=295,
         sharpness_min=100,
     ),
+    # 快速检测专用标准（阈值较宽松，用于前端 SmartComplianceEngine）
+    "quick_check": StandardProfile(
+        name="quick_check",
+        label="快速检测 (Smart)",
+        description="前端智能检测使用的宽松标准，仅对严重问题报警",
+        head_ratio_range=(0.20, 0.90),       # 更宽范围
+        eye_line_range=(0.30, 0.75),
+        face_center_max_offset=0.15,          # 允许更大偏移
+        chin_margin_min=0.01,
+        yaw_max=8.0,                          # 更宽松角度阈值
+        pitch_max=8.0,
+        roll_max=8.0,
+        ear_min=0.12,                         # 更低眼睛开合阈值
+        mar_max=0.40,
+        mar_smile_max=0.55,
+        glasses_allowed=True,
+        glare_max_brightness=245,
+        red_eye_max_ratio=1.8,
+        face_uniformity_min=0.65,
+        shadow_l_ratio=0.75,
+        bg_uniformity_min=70,
+        bg_color_max_distance=180,
+        min_resolution_px=200,
+        sharpness_min=30,
+    ),
 }
 
 
@@ -228,6 +253,8 @@ def get_standard(name: str) -> StandardProfile:
         "jp": "JAPAN",
         "japan": "JAPAN",
         "日本": "JAPAN",
+        "quick": "quick_check",
+        "smart": "quick_check",
     }
 
     key = aliases.get(name_lower)
